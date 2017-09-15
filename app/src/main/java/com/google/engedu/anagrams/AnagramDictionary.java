@@ -15,10 +15,11 @@
 
 package com.google.engedu.anagrams;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,9 +35,9 @@ public class AnagramDictionary {
     private Random random = new Random();
     private ArrayList<String> wordList;
     private HashSet<String> wordSet;
-    private HashMap<String,ArrayList<String>> sizeToWord;
     private HashMap<String,ArrayList<String>> lettersToWord;
-    private int wordLength =3;
+    private HashMap<Integer,ArrayList<String>> sizeToWord;
+    private int wordLength = 3;
 
     public AnagramDictionary(Reader reader) throws IOException {
         BufferedReader in = new BufferedReader(reader);
@@ -44,6 +45,8 @@ public class AnagramDictionary {
         wordList = new ArrayList<>();
         wordSet = new HashSet<>();
         lettersToWord = new HashMap<>();
+        sizeToWord = new HashMap<>();
+
         while((line = in.readLine()) != null) {
             String word = line.trim();
             wordList.add(word);
@@ -65,59 +68,64 @@ public class AnagramDictionary {
             }
             else{
                 ArrayList<String> list = new ArrayList<>();
-                listto.add(word);
-                sizeToWord.put(size,list);
+                list.add(word);
+                sizeToWord.put(size, list);
             }
         }
     }
-    public String sortString(String word)
-    {
+
+    public String sortString(String word){
         char arr[] = word.toCharArray();
         Arrays.sort(arr);
         return new String(arr);
-    };
+    }
+
+
     public boolean isGoodWord(String word, String base) {
-        if(wordList.contains(word) && !word.contains(base)) return true;
+        if(wordSet.contains(word) && !word.contains(base)) return true;
         else return false;
     }
 
     public List<String> getAnagrams(String targetWord) {
         ArrayList<String> result = new ArrayList<String>();
+
         String sortedWord = sortString(targetWord);
         int len = wordList.size();
-        for (int i=0;i < len; i++){
+        for(int i=0; i<len; i++) {
             String dSortedWord = sortString(wordList.get(i));
             if(dSortedWord.equals(sortedWord)){
                 result.add(wordList.get(i));
             }
         }
+
         return result;
     }
 
     public List<String> getAnagramsWithOneMoreLetter(String word) {
         ArrayList<String> result = new ArrayList<String>();
-        for(char ch='a'; ch<='z' ; ch++)
-        {
+
+        for(char ch='a'; ch<='z'; ch++){
             String tmpWord = word + ch;
             String sortedWord = sortString(tmpWord);
             if(lettersToWord.containsKey(sortedWord)){
-                result.addAll(lettersToWord.get(sortedWord));
                 for(String str: lettersToWord.get(sortedWord)){
-                    if(isGoodWord(str,word)) result.add(str);
+                    if(isGoodWord(str, word)) result.add(str);
                 }
             }
-
         }
+
         return result;
     }
 
     public String pickGoodStarterWord() {
 
-        if(wordLength<MIN_WORD_LENGTH) wordLength++;
-        for(String s: sizeToWord.get(wordLength)){
-            String sortedString = sortString(s);
-            if(lettersToWord.containsKey(sortedString) && lettersToWord.get(sortedString).size()>MIN_WORD_ANAGRAMS){
-                return s;
+        if(wordLength<MAX_WORD_LENGTH) wordLength++;
+
+        while(true){
+            int rindx = random.nextInt(sizeToWord.get(wordLength).size());
+            String word = sizeToWord.get(wordLength).get(rindx);
+            if(getAnagramsWithOneMoreLetter(word).size()>=MIN_NUM_ANAGRAMS){
+                return word;
             }
         }
     }
